@@ -1,0 +1,133 @@
+{
+  "name": "Assistente de Investimentos - RPA + N8N (v2)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "assistente-investimentos",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "7f3c2a10-5b6e-4c1d-9a8b-0000a551a9e5"
+    },
+    {
+      "parameters": {
+        "url": "https://digitalinnovationone.github.io/dio-lab-assistente-investimentos-rpa-n8n/data.csv",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Buscar Investimentos (CSV)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "csv",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Cruza o perfil de cada cliente com os investimentos do CSV e gera a mensagem\nconst investimentos = $('Extract from File').all().map(i => i.json);\nconst corpo = $('Webhook').first().json.body;\nconst clientes = Array.isArray(corpo) ? corpo : (corpo.clientes || [corpo]);\n\nconst templates = {\n  Conservador: \"foco em renda fixa e segurança\",\n  Moderado: \"um mix equilibrado entre renda fixa e variável\",\n  Arrojado: \"ênfase em ações e maior potencial de retorno\"\n};\n\n// \"R$ 12.500,00\" -> 12500\nfunction paraNumero(saldo) {\n  if (typeof saldo === \"number\") return saldo;\n  return Number(String(saldo).replace(/[^\\d,]/g, \"\").replace(\",\", \".\"));\n}\n\nfunction formatarBRL(valor) {\n  return valor.toLocaleString(\"pt-BR\", { style: \"currency\", currency: \"BRL\" });\n}\n\nreturn clientes.map(c => {\n  const perfil = String(c.perfil).trim();\n  const saldo = paraNumero(c.saldo);\n  const opcoes = investimentos.filter(i => String(i.perfil).trim() === perfil && Number(i.minimo) <= saldo);\n  const lista = opcoes.map(o => `${o.produto} (${o.rentabilidade})`).join(\", \")\n    || \"nenhum produto atinge o valor mínimo no momento\";\n  const mensagem = `Olá, ${c.nome}! Como seu perfil é ${perfil}, recomendamos ${templates[perfil] || \"uma conversa com seu assessor\"}. Com seu saldo de ${formatarBRL(saldo)}, as opções compatíveis são: ${lista}.`;\n  return { json: { nome: c.nome, email: c.email, perfil, saldo, opcoes: opcoes.map(o => o.produto), mensagem } };\n});"
+      },
+      "id": "a1b2c3d4-0004-4000-8000-000000000004",
+      "name": "Cruzar Dados e Gerar Mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0005-4000-8000-000000000005",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Buscar Investimentos (CSV)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Investimentos (CSV)": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Cruzar Dados e Gerar Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cruzar Dados e Gerar Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
