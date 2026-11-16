@@ -2,14 +2,21 @@
 RPA - Extrai clientes da página web e envia ao Webhook do N8N.
 Uso:  python extrair_clientes.py
 """
+import os
+
 import requests
 from bs4 import BeautifulSoup
 
 URL_CLIENTES = "https://digitalinnovationone.github.io/dio-lab-assistente-investimentos-rpa-n8n/"
 
+# A URL do webhook vem da variável de ambiente N8N_WEBHOOK_URL (veja .env.example).
+# Nunca coloque URLs de produção ou tokens direto no código.
 # Teste:     http://localhost:5678/webhook-test/assistente-investimentos  (clicar "Listen for test event" antes)
 # Produção:  http://localhost:5678/webhook/assistente-investimentos       (workflow ativado)
-WEBHOOK_URL = "http://localhost:5678/webhook-test/assistente-investimentos"
+WEBHOOK_URL = os.getenv(
+    "N8N_WEBHOOK_URL",
+    "http://localhost:5678/webhook-test/assistente-investimentos",
+)
 
 
 def extrair_clientes():

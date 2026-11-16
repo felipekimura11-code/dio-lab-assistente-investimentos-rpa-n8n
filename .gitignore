@@ -1,0 +1,25 @@
+# Segredos e configurações locais — nunca versionar
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+secrets*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# n8n local
+.n8n/
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
